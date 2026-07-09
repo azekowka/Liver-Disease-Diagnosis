@@ -9,12 +9,14 @@ import numpy as np
 import tensorflow as tf
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from starlette.concurrency import run_in_threadpool
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
 import lab_model
 import ocr as lab_ocr
+import ultrasound_store
 
 
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +40,7 @@ def _warm_up_lab_models() -> None:
     # request, where a slow cold-start could look like a hung/failed call.
     threading.Thread(target=lab_ocr.warm_up, daemon=True).start()
     threading.Thread(target=lab_model.warm_up, daemon=True).start()
+    ultrasound_store.init_db()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_KERAS_PATH = BASE_DIR / "models" / "custom_liver_cnn.keras"
@@ -98,15 +101,29 @@ async def predict_ultrasound(file: UploadFile = File(...)) -> Dict[str, Any]:
 
         malignant_prob = float(probs[CLASS_NAMES.index("malignant")]) if "malignant" in CLASS_NAMES else 0.0
         is_malignant = malignant_prob >= 0.5
+        probabilities = {
+            class_name: round(float(prob), 4) for class_name, prob in zip(CLASS_NAMES, probs)
+        }
+
+        saved = ultrasound_store.save_result(
+            filename=file.filename,
+            content_type=file.content_type or "image/jpeg",
+            image_bytes=contents,
+            predicted_class=predicted_class,
+            is_malignant=is_malignant,
+            confidence=round(float(np.max(probs)), 4),
+            malignant_probability=round(malignant_prob, 4),
+            probabilities=probabilities,
+        )
 
         return {
+            "id": saved["id"],
+            "created_at": saved["created_at"],
             "filename": file.filename,
             "predicted_class": predicted_class,
             "is_malignant": is_malignant,
             "confidence": round(float(np.max(probs)), 4),
-            "probabilities": {
-                class_name: round(float(prob), 4) for class_name, prob in zip(CLASS_NAMES, probs)
-            },
+            "probabilities": probabilities,
             "malignant_probability": round(malignant_prob, 4),
         }
     except UnidentifiedImageError as exc:
@@ -121,6 +138,36 @@ async def predict_ultrasound(file: UploadFile = File(...)) -> Dict[str, Any]:
 @app.get("/ultrasound/classes")
 def get_classes() -> Dict[str, List[str]]:
     return {"classes": CLASS_NAMES}
+
+
+@app.get("/ultrasound/history")
+def list_ultrasound_history(limit: int = 100) -> List[Dict[str, Any]]:
+    return ultrasound_store.list_history(limit=limit)
+
+
+@app.get("/ultrasound/history/{record_id}")
+def get_ultrasound_history_item(record_id: str) -> Dict[str, Any]:
+    record = ultrasound_store.get_record(record_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    return record
+
+
+@app.get("/ultrasound/history/{record_id}/image")
+def get_ultrasound_history_image(record_id: str) -> Response:
+    found = ultrasound_store.get_image(record_id)
+    if found is None:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    image_bytes, content_type = found
+    return Response(content=image_bytes, media_type=content_type)
+
+
+@app.delete("/ultrasound/history/{record_id}")
+def delete_ultrasound_history_item(record_id: str) -> Dict[str, bool]:
+    deleted = ultrasound_store.delete_record(record_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    return {"deleted": True}
 
 
 # ---------------------------------------------------------------------------

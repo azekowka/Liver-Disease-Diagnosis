@@ -388,6 +388,30 @@
   .pp-shot-badge { animation: none; }
 }
 
+/* clickable history row — reopen a past analysis */
+.pipe-row-click { cursor: pointer; transition: background .12s var(--ease); }
+.pipe-row-click:hover { background: var(--paper-2); }
+
+/* ============================================================
+   RESULT MODAL — reopen a past ultrasound analysis
+   ============================================================ */
+.pipe-modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(15,17,22,.55);
+  display: grid; place-items: center; padding: 24px; animation: pipeFadeIn .18s var(--ease) both; }
+@keyframes pipeFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.pipe-modal { width: 100%; max-width: 640px; max-height: calc(100vh - 48px); overflow-y: auto;
+  background: var(--paper); border: 1px solid var(--rule-strong); border-radius: var(--radius-l);
+  box-shadow: var(--shadow-2); animation: pipeUp .25s var(--ease-out) both; }
+.pipe-modal-head { display: flex; align-items: center; gap: 16px; padding: 20px 22px;
+  border-bottom: 1px solid var(--rule); position: sticky; top: 0; background: var(--paper); z-index: 1; }
+.pipe-modal-head .pipe-pp-id { flex: 1; min-width: 0; }
+.pipe-modal-body { padding: 22px; display: grid; gap: 20px; }
+.pipe-modal-body .pp-shot-frame { max-width: 380px; width: 100%; margin: 0 auto; aspect-ratio: 4 / 3; }
+
+@media (max-width: 520px) {
+  .pipe-modal-overlay { padding: 0; }
+  .pipe-modal { max-width: 100%; max-height: 100vh; border-radius: 0; }
+}
+
 /* primary file-picker — scan-price look, sized up as the sole CTA */
 .pipe-pick { padding: 11px 20px; font-size: 14.5px; font-weight: 500; border-radius: var(--radius); }
 .pipe-pick svg { color: var(--accent); }

@@ -1,68 +1,41 @@
 "use client";
 import "../pipeline.css";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useFetch } from "@/lib/useFetch";
-import { PageHead, Loading, ErrorNote, StatusBadge } from "@/components/Bits";
+import { PageHead, Loading, ErrorNote } from "@/components/Bits";
 import { Reveal, AmbientField } from "@/components/Motion";
 import { Glyph } from "@/components/Icon";
 import ParseProgress from "@/components/ParseProgress";
-
-const METHOD_RU: Record<string, string> = {
-  table: "таблица", ocr: "OCR", words: "текст", lines: "строки", text: "текст", line_items: "строки",
-  pdf_text: "PDF · текст", pdf_ocr: "PDF · OCR", pdf_table: "PDF · таблица", xlsx: "Excel", docx: "Word", xls: "Excel",
-};
+import UltrasoundResultModal from "@/components/UltrasoundResultModal";
+import type { UltrasoundRecord } from "@/lib/types";
 
 const FORMATS: { ic: keyof typeof Glyph; nm: string; sub: string; ext: string }[] = [
   { ic: "scan", nm: "Изображение", sub: "CNN", ext: ".jpg / .png" },
 ];
 
-const ACTIVE_KEY = "medarchive:activeDoc";
-
-export default function DocumentsPage() {
-  const { data, error, loading, reload } = useFetch(() => api.documents(), []);
+export default function UltrasoundPage() {
+  const { data, error, loading, reload } = useFetch(() => api.ultrasoundHistory(), []);
   const [over, setOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [reconnect, setReconnect] = useState<{ id: string; name: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [openRecord, setOpenRecord] = useState<UltrasoundRecord | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // On load, resume a still-running job from a prior page session (survives reload).
-  useEffect(() => {
-    let alive = true;
-    try {
-      const raw = localStorage.getItem(ACTIVE_KEY);
-      if (!raw) return;
-      const saved = JSON.parse(raw) as { id: string; name: string };
-      api.document(saved.id)
-        .then((doc) => {
-          if (!alive) return;
-          if (doc.status === "queued" || doc.status === "processing") setReconnect(saved);
-          else localStorage.removeItem(ACTIVE_KEY);
-        })
-        .catch(() => localStorage.removeItem(ACTIVE_KEY));
-    } catch { /* ignore */ }
-    return () => { alive = false; };
-  }, []);
-
-  const queuedCount = (data || []).filter((d) => d.status === "queued").length;
 
   async function del(id: string) {
     setBusy(id);
-    try { await api.deleteDocument(id); reload(); }
-    catch (e) { alert("Не удалось удалить: " + (e as Error).message); }
-    finally { setBusy(null); }
-  }
-  async function purgeQueue() {
-    if (!window.confirm(`Удалить все документы в очереди (${queuedCount})?`)) return;
-    setBusy("purge");
-    try { const r = await api.purgeDocuments("queued"); reload(); alert(`Удалено: ${r.deleted}`); }
-    catch (e) { alert("Ошибка: " + (e as Error).message); }
-    finally { setBusy(null); }
+    try {
+      await api.deleteUltrasoundRecord(id);
+      if (openRecord?.id === id) setOpenRecord(null);
+      reload();
+    } catch (e) {
+      alert("Не удалось удалить: " + (e as Error).message);
+    } finally {
+      setBusy(null);
+    }
   }
 
-  const showProgress = file || reconnect;
-  const closeProgress = () => { setFile(null); setReconnect(null); reload(); };
+  const closeProgress = () => { setFile(null); reload(); };
 
   return (
     <>
@@ -72,14 +45,8 @@ export default function DocumentsPage() {
         извлечёт информацию о панели и передаст её на CNN-модель для выявления наличия/отсутствия заболеваний.
       </p>
 
-      {showProgress ? (
-        <ParseProgress
-          file={file ?? undefined}
-          reconnectId={!file && reconnect ? reconnect.id : undefined}
-          reconnectName={!file && reconnect ? reconnect.name : undefined}
-          onComplete={reload}
-          onClose={closeProgress}
-        />
+      {file ? (
+        <ParseProgress file={file} onComplete={reload} onClose={closeProgress} />
       ) : (
         <div
           className={`pipe-drop ${over ? "over" : ""}`}
@@ -146,48 +113,60 @@ export default function DocumentsPage() {
       )}
 
       <div className="section-title">Обработанные документы</div>
-      {queuedCount > 0 && (
-        <div className="pipe-queuebar">
-          <span>{queuedCount} в очереди</span>
-          <button className="btn small" disabled={busy === "purge"} onClick={purgeQueue}>
-            <Glyph.x size={13} /> {busy === "purge" ? "Очистка…" : "Очистить очередь"}
-          </button>
-        </div>
-      )}
+
       {data && (
         <Reveal dir="up">
           <div className="panel">
             <table className="table">
               <thead>
-                <tr><th>Файл</th><th style={{ width: 110 }}>Формат</th><th style={{ width: 70 }} className="num">Год</th><th style={{ width: 130 }}>Статус</th><th>Метод извлечения</th><th style={{ width: 44 }}></th></tr>
+                <tr>
+                  <th>Файл</th>
+                  <th style={{ width: 120 }}>Класс</th>
+                  <th style={{ width: 140 }}>Злокачественность</th>
+                  <th style={{ width: 100 }} className="num">Уверенность</th>
+                  <th style={{ width: 170 }}>Дата</th>
+                  <th style={{ width: 44 }}></th>
+                </tr>
               </thead>
               <tbody>
-                {data.map((d) => (
-                  <tr key={d.id}>
-                    <td className="pipe-doc-name">{d.source_filename}</td>
-                    <td><span className="pipe-fmt-cell">{d.file_format}</span></td>
-                    <td className="num muted">{d.year ?? "—"}</td>
-                    <td><StatusBadge status={d.status} /></td>
+                {data.map((r) => (
+                  <tr key={r.id} className="pipe-row-click" onClick={() => setOpenRecord(r)}>
+                    <td className="pipe-doc-name">{r.filename}</td>
+                    <td>{r.predicted_class}</td>
                     <td>
-                      <div className="row" style={{ gap: 6 }}>
-                        {Object.entries(d.method_summary || {}).map(([k, v]) => (
-                          <span className="badge" key={k}>{METHOD_RU[k] || k} · {v}</span>
-                        ))}
-                        {Object.keys(d.method_summary || {}).length === 0 && <span className="muted">—</span>}
-                      </div>
+                      <span className={`badge ${r.is_malignant ? "ox" : "ok"}`}>
+                        {r.is_malignant ? "Да" : "Нет"}
+                      </span>
                     </td>
+                    <td className="num mono">{r.confidence.toFixed(2)}</td>
+                    <td className="muted">{new Date(r.created_at).toLocaleString("ru-RU")}</td>
                     <td>
-                      <button className="pipe-doc-del" title="Удалить документ" disabled={busy === d.id} onClick={() => del(d.id)}>
+                      <button
+                        className="pipe-doc-del"
+                        title="Удалить анализ"
+                        disabled={busy === r.id}
+                        onClick={(e) => { e.stopPropagation(); del(r.id); }}
+                      >
                         <Glyph.x size={14} />
                       </button>
                     </td>
                   </tr>
                 ))}
-                {data.length === 0 && <tr><td colSpan={6} className="muted" style={{ padding: 30, textAlign: "center" }}>Документов пока нет — загрузите первый прайс-лист выше.</td></tr>}
+                {data.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="muted" style={{ padding: 30, textAlign: "center" }}>
+                      Пока нет проанализированных снимков — загрузите первый выше.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </Reveal>
+      )}
+
+      {openRecord && (
+        <UltrasoundResultModal record={openRecord} onClose={() => setOpenRecord(null)} />
       )}
     </>
   );

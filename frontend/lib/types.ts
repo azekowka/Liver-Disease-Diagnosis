@@ -161,6 +161,22 @@ export type LabPredictResult = {
   probability_healthy: number;
 };
 
+// ---------------------------------------------------------------------------
+// Ultrasound CNN analysis history (/ultrasound/history) — persisted results
+// from /ultrasound/predict, reopenable from the "Обработанные документы" table.
+// ---------------------------------------------------------------------------
+
+export type UltrasoundRecord = {
+  id: string;
+  filename: string;
+  created_at: string;
+  predicted_class: string;
+  is_malignant: boolean;
+  confidence: number;
+  malignant_probability: number;
+  probabilities: Record<string, number>;
+};
+
 export const TIER_LABELS: Record<string, string> = {
   base_no_vat: "Без НДС",
   resident_kzt: "Граждане РК",

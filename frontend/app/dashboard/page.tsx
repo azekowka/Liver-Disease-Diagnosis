@@ -22,10 +22,7 @@ function LeadMeter({ value }: { value: number }) {
 export default function Dashboard() {
   return (
     <>
-      <PageHead eyebrow="Реестр · сводка" title="Состояние реестра">
-        <Link className="btn primary" href="/documents">
-          <Glyph.upload size={15} /> Загрузить прайс
-        </Link>
+      <PageHead eyebrow="Машинное обучение" title="Методология">
       </PageHead>
     </>
   );

@@ -11,7 +11,7 @@ async function j<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 import type {
-  AiCompare, Dashboard, DashboardDocs, DashboardPartners, DocPreview, DocumentResult, DocumentRow, LabExtractResponse, LabFieldMeta, LabPredictInput, LabPredictResult, Partner, PartnerPrice, ProgressEvent, SearchResult, Service, ServiceDescription, ServicePrice, Unmatched,
+  AiCompare, Dashboard, DashboardDocs, DashboardPartners, DocPreview, DocumentResult, DocumentRow, LabExtractResponse, LabFieldMeta, LabPredictInput, LabPredictResult, Partner, PartnerPrice, ProgressEvent, SearchResult, Service, ServiceDescription, ServicePrice, Unmatched, UltrasoundRecord,
 } from "./types";
 
 export const api = {
@@ -87,6 +87,13 @@ export const api = {
     j<LabPredictResult>("/labs/predict", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
     }),
+
+  // Ultrasound CNN analysis history (/ultrasound page) — every /ultrasound/predict
+  // call is persisted server-side so past verdicts can be reopened.
+  ultrasoundHistory: (limit = 200) => j<UltrasoundRecord[]>(`/ultrasound/history?limit=${limit}`),
+  ultrasoundRecord: (id: string) => j<UltrasoundRecord>(`/ultrasound/history/${id}`),
+  ultrasoundImageUrl: (id: string) => `${BASE}/ultrasound/history/${id}/image`,
+  deleteUltrasoundRecord: (id: string) => j<{ deleted: boolean }>(`/ultrasound/history/${id}`, { method: "DELETE" }),
 
   // fetch the bundled demo scan as a File (so it flows through the normal upload path)
   demoFile: async (): Promise<File> => {

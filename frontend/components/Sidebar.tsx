@@ -4,12 +4,9 @@ import { usePathname } from "next/navigation";
 import { Glyph } from "./Icon";
 
 const NAV = [
-  { href: "/dashboard", label: "Сводка", icon: Glyph.board },
-  { href: "/partners", label: "Партнёры", icon: Glyph.partners },
-  { sep: true as const },
-  { href: "/documents", label: "Документы", icon: Glyph.docs },
-  { href: "/ultrasound", label: "УЗИ печени", icon: Glyph.docs },
-  { href: "/patients", label: "Пациенты", icon: Glyph.docs },
+  { href: "/dashboard", label: "Методология", icon: Glyph.board },
+  { href: "/documents", label: "Диагностика печеночных проб", icon: Glyph.docs },
+  { href: "/ultrasound", label: "Ультразвуковое исследование печени", icon: Glyph.partners },
 ];
 
 export default function Sidebar() {
