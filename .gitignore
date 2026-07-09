@@ -12,3 +12,5 @@ __pycache__/
 *.pyzwzwzw
 *.pyzwzwzwz
 
+/dataset_augmented
+/dataset_CNN

@@ -3,8 +3,8 @@ import numpy as np
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from PIL import Image  # ✅ Use PIL to prevent OpenCV corruption
 
-dataset_path = "dataset/"
-output_path = "dataset_augmented_custom/"
+dataset_path = "dataset_CNN/"
+output_path = "dataset_augmented/"
 output_size = (224, 224)  # Standard for CNNs
 
 # ✅ Define the number of augmented images per input image
@@ -14,7 +14,11 @@ AUGMENTATION_MULTIPLIER = 3  # Change this to increase dataset size
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 
-categories = ["normal", "benign", "malignant"]
+category_paths = {
+    "normal": os.path.join(dataset_path, "Normal", "Normal", "image"),
+    "benign": os.path.join(dataset_path, "Benign", "Benign", "image"),
+    "malignant": os.path.join(dataset_path, "Malignant", "Malignant", "image"),
+}
 
 # ✅ Define Data Augmentation
 datagen = ImageDataGenerator(
@@ -29,12 +33,15 @@ datagen = ImageDataGenerator(
     fill_mode="nearest"
 )
 
-for category in categories:
-    input_folder = os.path.join(dataset_path, category)
+for category, input_folder in category_paths.items():
     output_folder = os.path.join(output_path, category)
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
+
+    if not os.path.exists(input_folder):
+        print(f"❌ ERROR: Folder not found {input_folder}")
+        continue
 
     for img_file in os.listdir(input_folder):
         img_path = os.path.join(input_folder, img_file)

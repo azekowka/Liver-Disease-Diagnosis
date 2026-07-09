@@ -20,7 +20,6 @@ From the repository root:
 ```powershell
 uv venv
 uv pip install -r requirements.txt
-uv pip install tensorflow opencv-python pillow joblib
 ```
 
 `requirements.txt` covers the tabular ML pipeline. The extra install line adds packages needed by the CNN/image workflow.
@@ -83,7 +82,17 @@ What it does:
 
 ## 4) Image Preprocessing Pipeline (`preprocessing/`)
 
-Expected source dataset structure:
+The preprocessing scripts are configured to read directly from `dataset_CNN/` in the repo root.
+
+Current mapping used by scripts:
+
+```text
+dataset_CNN/Normal/Normal/image
+dataset_CNN/Benign/Benign/image
+dataset_CNN/Malignant/Malignant/image
+```
+
+Expected structure in repo:
 
 ```text
 dataset/
@@ -91,6 +100,8 @@ dataset/
   benign/
   malignant/
 ```
+
+No rename/copy to `dataset/` is needed.
 
 ### Step 1: Resize images
 
@@ -111,11 +122,8 @@ python .\preprocessing\data_augmentation.py
 ```
 
 Important note:
-- The augmentation script currently outputs to `dataset_augmented_custom/`.
-- CNN loading script uses `dataset_augmented/` by default.
-- Either:
-  1) rename `dataset_augmented_custom` to `dataset_augmented`, or
-  2) update dataset path in `preprocessing/load_dataset.py` to match.
+- The augmentation script now outputs directly to `dataset_augmented/`.
+- This matches `preprocessing/load_dataset.py` default path.
 
 ### Step 4 (optional): Visual check of augmented images
 
@@ -208,6 +216,12 @@ python .\preprocessing\data_augmentation.py
 python .\CNN_Model\train.py
 ```
 
+PowerShell one-liner (use `;`, not `&&`):
+
+```powershell
+python .\preprocessing\resize_images.py; python .\preprocessing\normalize_images.py; python .\preprocessing\data_augmentation.py; python .\CNN_Model\train.py
+```
+
 After training, run inference on any file in `test_samples/` using the sample code in section 7.
 
 ---
@@ -217,7 +231,7 @@ After training, run inference on any file in `test_samples/` using the sample co
 - **`ModuleNotFoundError` in CNN training**
   - Check Python path/import in `CNN_Model/train.py`.
 - **No images detected**
-  - Verify directory names exactly: `dataset/normal`, `dataset/benign`, `dataset/malignant`.
+  - Verify directories exist: `dataset_CNN/Normal/Normal/image`, `dataset_CNN/Benign/Benign/image`, `dataset_CNN/Malignant/Malignant/image`.
 - **Shape mismatch during prediction**
   - Ensure input image tensor is resized to `224x224` and has 3 channels.
 - **Wrong class labels**

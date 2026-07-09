@@ -3,11 +3,14 @@ import cv2
 import numpy as np
 
 # Define dataset path and categories
-dataset_path = "dataset/"
-categories = ["normal", "benign", "malignant"]  # Add this line
+dataset_path = "dataset_CNN/"
+category_paths = {
+    "normal": os.path.join(dataset_path, "Normal", "Normal", "image"),
+    "benign": os.path.join(dataset_path, "Benign", "Benign", "image"),
+    "malignant": os.path.join(dataset_path, "Malignant", "Malignant", "image"),
+}
 
-for category in categories:
-    path = os.path.join(dataset_path, category)
+for category, path in category_paths.items():
 
     if not os.path.exists(path):
         print(f"Folder {path} not found. Skipping...")
@@ -24,4 +27,4 @@ for category in categories:
         else:
             print(f"Error loading {img_path}, skipping...")
 
-print("✅ All images normalized to [0,1] range!")
+print("✅ All dataset_CNN images normalized to [0,1] range!")

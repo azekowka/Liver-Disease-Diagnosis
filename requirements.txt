@@ -5,3 +5,7 @@ imblearn
 miceforest
 matplotlib
 xgboost
+tensorflow 
+opencv-python 
+pillow 
+joblib

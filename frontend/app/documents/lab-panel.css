@@ -1,0 +1,50 @@
+/* ============================================================
+   LAB PANEL — tabular liver lab-panel diagnosis (/documents).
+   Scoped to this page only. All classes prefixed `lab-`.
+   Reuses pipeline.css shells (.pipe-drop, .pipe-rcells, .pipe-note…)
+   for visual consistency without touching that shared file.
+   ============================================================ */
+
+.lab-panel { display: grid; gap: 28px; }
+
+.lab-modes { margin: -4px 0 2px; }
+.lab-modes button { display: inline-flex; align-items: center; gap: 8px; }
+
+.lab-drop { margin-top: 2px; }
+
+.lab-extracting { display: flex; flex-direction: column; gap: 4px; }
+
+.lab-review-head { align-items: flex-start; margin-bottom: 18px; }
+
+.lab-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 20px; }
+.lab-field { display: flex; flex-direction: column; gap: 7px; }
+.lab-field .lbl { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-2); }
+.lab-field .lbl .unit { color: var(--muted); font-weight: 400; }
+.lab-ocr-badge { margin-left: auto; }
+.lab-field.auto .input { border-color: rgba(31, 143, 95, .35); background: rgba(31, 143, 95, .05); }
+.lab-field.auto select.input { border-color: rgba(31, 143, 95, .35); background: rgba(31, 143, 95, .05); }
+
+.lab-raw { margin-top: 18px; font-size: 12.5px; }
+.lab-raw summary { cursor: pointer; color: var(--accent-ink); font-family: var(--mono); font-size: 11.5px; letter-spacing: .02em; }
+.lab-raw pre { margin: 10px 0 0; padding: 12px 14px; background: var(--paper-2); border: 1px solid var(--rule);
+  border-radius: var(--radius-s); max-height: 220px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+  font-size: 12px; color: var(--ink-2); }
+
+.lab-review-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rule); }
+
+.lab-verdict { border-width: 1.5px; animation: pipeUp .5s var(--ease-out) both; }
+.lab-verdict.disease { border-color: rgba(200, 50, 79, .35); background: var(--ox-wash); }
+.lab-verdict.healthy { border-color: rgba(31, 143, 95, .30); background: rgba(31, 143, 95, .06); }
+.lab-verdict.disease .pipe-rcell.hero .v { color: var(--oxblood); }
+.lab-verdict.healthy .pipe-rcell.hero .v { color: var(--ok); }
+.lab-verdict .pipe-rcell { background: var(--paper); }
+
+.lab-disclaimer { display: flex; align-items: flex-start; gap: 9px; font-size: 12.5px; color: var(--ink-2);
+  line-height: 1.55; margin-top: 18px; }
+.lab-disclaimer svg { flex: none; margin-top: 2px; color: var(--muted); }
+
+@media (max-width: 620px) {
+  .lab-form-grid { grid-template-columns: 1fr; }
+  .lab-review-foot { flex-direction: column; align-items: stretch; }
+}

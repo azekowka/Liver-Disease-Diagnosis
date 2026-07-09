@@ -1,0 +1,33 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-c", "import os,sys; sys.path.insert(0,'backend'); import uvicorn; from app import app; uvicorn.run(app, host='0.0.0.0', port=int(os.environ.get('PORT','8000')))"],
+      "port": 8000,
+      "autoPort": true
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "run", "dev", "--", "-p", "3001"],
+      "port": 3001
+    },
+    {
+      "name": "labs-backend",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-c", "import os,sys; sys.path.insert(0,'backend'); import uvicorn; from app import app; uvicorn.run(app, host='0.0.0.0', port=int(os.environ.get('PORT','8000')))"],
+      "port": 8000,
+      "autoPort": true
+    },
+    {
+      "name": "labs-frontend",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["frontend/node_modules/next/dist/bin/next", "dev", "frontend"],
+      "port": 3000,
+      "autoPort": true,
+      "env": { "BACKEND_URL": "http://localhost:60071" }
+    }
+  ]
+}
